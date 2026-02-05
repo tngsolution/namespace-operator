@@ -1,0 +1,9 @@
+# config/manager/kustomization.yaml
+resources:
+- manager.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: controller
+  newName: docker.io/baabdoul/namespace-operator
+  newTag: 0.2.0

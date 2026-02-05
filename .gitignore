@@ -30,3 +30,22 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Logs
+*.log
+
+# Operator SDK
+config/crd/bases/*_backup.yaml
+
+# Test artifacts
+cover.out
+coverage.txt
+
+# Env files
+.env
+.env.*
+.bin/
+
+**/zz_generated.deepcopy.go
+**/manifests/charts/namespace-operator/
+**/bin

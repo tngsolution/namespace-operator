@@ -1,0 +1,15 @@
+apiVersion: platform.example.com/v1alpha1
+kind: Tenant
+metadata:
+  name: team-devops
+spec:
+  namespace: team-devops
+  quota:
+    cpu: "4"
+    memory: "8Gi"
+    pods: 20
+  limits:
+    defaultCpu: "500m"
+    defaultMemory: "512Mi"
+    maxCpu: "1"
+    maxMemory: "1Gi"
