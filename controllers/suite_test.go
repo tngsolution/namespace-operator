@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	platformv1alpha1 "github.com/tngs/namespace-operator/api/v1alpha1"
@@ -32,7 +33,7 @@ func TestMain(m *testing.M) {
 	// ---------------------------------------------------------------------
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
-			"../config/crd/bases", // ⬅️ CRITIQUE
+			filepath.Join("..", "manifests", "charts", "namespace-operator", "crds"), // ⬅️ CRITIQUE
 		},
 	}
 

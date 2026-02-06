@@ -7,10 +7,15 @@ on:
 
 jobs:
   helm-release:
+    name: Release Helm Chart
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
+
+    env:
+      CHART_PATH: manifests/charts/namespace-operator
+      DIST_DIR: dist
 
     steps:
       - name: Checkout
@@ -21,12 +26,17 @@ jobs:
         with:
           version: v3.14.4
 
+      - name: Lint Helm chart
+        run: |
+          helm lint $CHART_PATH
+
       - name: Package Helm chart
         run: |
-          helm package manifests/charts/namespace-operator \
-            --destination dist
+          mkdir -p $DIST_DIR
+          helm package $CHART_PATH --destination $DIST_DIR
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.tgz
+          files: |
+            dist/*.tgz
