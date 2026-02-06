@@ -37,7 +37,8 @@ ENVTEST := $(BIN_DIR)/setup-envtest
 # Project
 # ------------------------------------------------------------------------------
 PROJECT_NAME := namespace-operator
-IMG ?= docker.io/baabdoul/namespace-operator:0.3.0
+VERSION ?= $(shell git describe --tags --abbrev=0 | sed 's/^v//')
+IMG ?= baabdoul/namespace-operator:$(VERSION)
 
 # ------------------------------------------------------------------------------
 # Helm

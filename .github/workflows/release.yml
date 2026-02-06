@@ -1,4 +1,4 @@
-name: Release Helm Chart
+name: Release
 
 on:
   push:
@@ -6,37 +6,44 @@ on:
       - "v*.*.*"
 
 jobs:
-  helm-release:
-    name: Release Helm Chart
+  release:
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
-
-    env:
-      CHART_PATH: manifests/charts/namespace-operator
-      DIST_DIR: dist
+      packages: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        run: |
+          echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Install yq
+        run: sudo snap install yq
+
+      - name: Bump Helm version
+        run: |
+          ./hack/bump-helm-version.sh ${{ github.ref_name }}
+
+      - name: Commit Helm version
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git commit -am "chore(release): helm ${VERSION}"
+          git push
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
-        with:
-          version: v3.14.4
-
-      - name: Lint Helm chart
-        run: |
-          helm lint $CHART_PATH
 
       - name: Package Helm chart
         run: |
-          mkdir -p $DIST_DIR
-          helm package $CHART_PATH --destination $DIST_DIR
+          helm package manifests/charts/namespace-operator \
+            --destination dist
 
-      - name: Create GitHub Release
+      - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/*.tgz
+          files: dist/*.tgz

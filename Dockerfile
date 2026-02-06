@@ -4,7 +4,7 @@
 FROM golang:1.22.7-alpine AS builder
 
 # Sécurité de base
-RUN apk add --no-cache ca-certificates git
+RUN apk add --no-cache ca-certificates git make
 
 WORKDIR /workspace
 
