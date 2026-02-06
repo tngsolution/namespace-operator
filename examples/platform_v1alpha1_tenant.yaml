@@ -7,9 +7,9 @@ spec:
   quota:
     cpu: "4"
     memory: "8Gi"
-    pods: 20
+    pods: 40
   limits:
     defaultCpu: "500m"
     defaultMemory: "512Mi"
-    maxCpu: "1"
-    maxMemory: "1Gi"
+    maxCpu: "2"
+    maxMemory: "2Gi"
