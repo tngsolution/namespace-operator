@@ -16,6 +16,8 @@ COPY main.go ./
 COPY api/ api/
 COPY controllers/ controllers/
 
+RUN make generate
+
 # Build du binaire
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
     go build -a -o manager main.go
