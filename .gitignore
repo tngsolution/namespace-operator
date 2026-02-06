@@ -48,3 +48,4 @@ coverage.txt
 
 **/zz_generated.deepcopy.go
 **/bin
+**/namespace-operator-*.tgz
