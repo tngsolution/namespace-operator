@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -21,6 +22,7 @@ const tenantFinalizer = "platform.example.com/finalizer"
 
 type TenantReconciler struct {
 	client.Client
+	Scheme *runtime.Scheme
 }
 
 func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -130,6 +132,8 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// --------------------------------------------------------------------------
 	// Status
 	// --------------------------------------------------------------------------
+	original := tenant.DeepCopy()
+
 	setCondition(
 		&tenant.Status.Conditions,
 		"Ready",
@@ -138,8 +142,9 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		"Namespace, quota and limits applied",
 	)
 
-	if err := r.Status().Update(ctx, &tenant); err != nil {
-		logger.Error(err, "unable to update Tenant status")
+	if err := r.Status().Patch(ctx, &tenant, client.MergeFrom(original)); err != nil {
+		logger.Error(err, "unable to patch Tenant status")
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil

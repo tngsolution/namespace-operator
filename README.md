@@ -129,6 +129,15 @@ make run
 
 ---
 
+## Examples
+
+Create a Tenant:
+
+```bash
+kubectl apply -f examples/tenant-minimal.yaml
+````
+---
+
 ## 📄 License
 
 Apache 2.0

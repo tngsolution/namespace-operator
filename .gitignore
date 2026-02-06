@@ -47,5 +47,4 @@ coverage.txt
 .bin/
 
 **/zz_generated.deepcopy.go
-**/manifests/charts/namespace-operator/
 **/bin

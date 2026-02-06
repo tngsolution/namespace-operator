@@ -30,9 +30,30 @@ endif
 # ------------------------------------------------------------------------------
 # General
 # ------------------------------------------------------------------------------
-IMG ?= namespace-operator:latest
 BIN_DIR := $(CURDIR)/.bin
 ENVTEST := $(BIN_DIR)/setup-envtest
+
+# ------------------------------------------------------------------------------
+# Project
+# ------------------------------------------------------------------------------
+PROJECT_NAME := namespace-operator
+IMG ?= docker.io/baabdoul/namespace-operator:0.3.0
+
+# ------------------------------------------------------------------------------
+# Helm
+# ------------------------------------------------------------------------------
+HELM_CHART := manifests/charts/namespace-operator
+HELM_RELEASE := namespace-operator
+HELM_NAMESPACE := namespace-operator-system
+
+
+# ------------------------------------------------------------------------------
+# Tools
+# ------------------------------------------------------------------------------
+GO ?= go
+HELM ?= helm
+KUBECTL ?= kubectl
+CONTROLLER_GEN ?= controller-gen
 
 # ------------------------------------------------------------------------------
 # Go (vendored, versioned + symlink)
@@ -152,7 +173,7 @@ generate: controller-gen ## Generate deepcopy code
 .PHONY: manifests
 manifests: controller-gen ## Generate CRDs and RBAC manifests
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd paths="./..." \
-		output:crd:artifacts:config=config/crd/bases
+		output:crd:artifacts:config=manifests/charts/namespace-operator/crds
 
 .PHONY: fmt
 fmt: go ## Run go fmt
@@ -167,6 +188,11 @@ test: envtest generate manifests fmt vet ## Run controller tests
 	$(ENVTEST) use latest --bin-dir $(BIN_DIR) >/dev/null
 	KUBEBUILDER_ASSETS=$$($(ENVTEST) use latest --bin-dir $(BIN_DIR) -p path) \
 	$(GO) test ./... -coverprofile cover.out
+
+.PHONY: crd
+crd:
+	$(CONTROLLER_GEN) crd paths=./api/... \
+	  output:crd:artifacts:config=manifests/charts/namespace-operator/crds
 
 # ------------------------------------------------------------------------------
 # Build
@@ -203,23 +229,34 @@ image-push: buildctl ## Build and push OCI image
 # ------------------------------------------------------------------------------
 # Kubernetes
 # ------------------------------------------------------------------------------
+.PHONY: helm-install
+helm-install:
+	$(HELM) install $(HELM_RELEASE) $(HELM_CHART) \
+	  --namespace $(HELM_NAMESPACE) \
+	  --create-namespace
 
-.PHONY: install
-install: manifests ## Install CRDs into the cluster
-	kubectl apply -f config/crd/bases
+.PHONY: helm-upgrade
+helm-upgrade:
+	$(HELM) upgrade $(HELM_RELEASE) $(HELM_CHART) \
+	  --namespace $(HELM_NAMESPACE)
 
-.PHONY: uninstall
-uninstall: ## Uninstall CRDs from the cluster
-	kubectl delete -f config/crd/bases
+.PHONY: helm-uninstall
+helm-uninstall:
+	$(HELM) uninstall $(HELM_RELEASE) \
+	  --namespace $(HELM_NAMESPACE)
 
-.PHONY: deploy
-deploy: manifests kustomize ## Deploy operator to the cluster
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+.PHONY: helm-template
+helm-template:
+	$(HELM) template $(HELM_RELEASE) $(HELM_CHART) \
+	  --namespace $(HELM_NAMESPACE)
 
-.PHONY: undeploy
-undeploy: ## Remove operator from the cluster
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+.PHONY: helm-lint
+helm-lint:
+	$(HELM) lint $(HELM_CHART)
+
+.PHONY: crd-apply
+crd-apply: ## Apply CRDs to the cluster
+	kubectl apply -f manifests/charts/namespace-operator/crds
 
 # ------------------------------------------------------------------------------
 # Info / Debug
