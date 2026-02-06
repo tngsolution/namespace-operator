@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #set -euo pipefail
-export IMG=docker.io/baabdoul/namespace-operator:0.2.0
+export IMG=docker.io/baabdoul/namespace-operator:1.0.2
 
 # =========================
 # Preconditions
 # =========================
 if [[ -z "${IMG:-}" ]]; then
   echo "❌ IMG is not set"
-  echo "👉 export IMG=docker.io/baabdoul/namespace-operator:0.1.0"
+  echo "👉 export IMG=docker.io/baabdoul/namespace-operator:1.0.2"
   exit 1
 fi
 
