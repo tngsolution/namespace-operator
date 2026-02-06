@@ -2,11 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
 
 jobs:
-  build:
+  go-tools:
+    name: Install Go tools
     runs-on: ubuntu-latest
 
     steps:
@@ -18,11 +19,49 @@ jobs:
         with:
           go-version: "1.22"
 
-      - name: Go fmt
-        run: go fmt ./...
+      - name: Prepare PATH
+        run: |
+          mkdir -p .bin
+          echo "$PWD/.bin" >> $GITHUB_PATH
 
-      - name: Go vet
-        run: go vet ./...
+      - name: Install Go tools via Makefile
+        run: make go
 
-      - name: Go test
-        run: go test ./...
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: go-tools
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - run: echo "$PWD/.bin" >> $GITHUB_PATH
+      - run: make lint
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - run: echo "$PWD/.bin" >> $GITHUB_PATH
+      - run: make build
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - run: echo "$PWD/.bin" >> $GITHUB_PATH
+      - run: make test

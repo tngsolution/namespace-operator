@@ -183,6 +183,10 @@ fmt: go ## Run go fmt
 vet: go ## Run go vet
 	$(GO) vet ./...
 
+.PHONY: lint
+lint: vet
+	$(GO) fmt ./...
+
 .PHONY: test
 test: envtest generate manifests fmt vet ## Run controller tests
 	$(ENVTEST) use latest --bin-dir $(BIN_DIR) >/dev/null
