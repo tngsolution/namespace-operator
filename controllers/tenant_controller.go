@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	platformv1alpha1 "github.com/tngs/namespace-operator/api/v1alpha1"
@@ -10,8 +11,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -25,6 +26,38 @@ type TenantReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// -----------------------------------------------------------------------------
+// Configuration resolution
+// -----------------------------------------------------------------------------
+func (r *TenantReconciler) resolveConfig(
+	ctx context.Context,
+	tenant *platformv1alpha1.Tenant,
+) (*platformv1alpha1.QuotaSpec, *platformv1alpha1.LimitSpec, error) {
+
+	// 1️⃣ TenantProfile takes precedence
+	if tenant.Spec.Profile != nil {
+		profile := &platformv1alpha1.TenantProfile{}
+		if err := r.Get(ctx, client.ObjectKey{
+			Name: *tenant.Spec.Profile,
+		}, profile); err != nil {
+			return nil, nil, err
+		}
+		return &profile.Spec.Quota, &profile.Spec.Limits, nil
+	}
+
+	// 2️⃣ Legacy inline config
+	if tenant.Spec.Quota != nil && tenant.Spec.Limits != nil {
+		return tenant.Spec.Quota, tenant.Spec.Limits, nil
+	}
+
+	return nil, nil, fmt.Errorf(
+		"either spec.profile or spec.quota + spec.limits must be set",
+	)
+}
+
+// -----------------------------------------------------------------------------
+// Reconcile
+// -----------------------------------------------------------------------------
 func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
@@ -37,23 +70,30 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// --------------------------------------------------------------------------
-	// Handle deletion with finalizer
+	// Resolve configuration
 	// --------------------------------------------------------------------------
-	if !tenant.DeletionTimestamp.IsZero() {
-		ns := &corev1.Namespace{}
-		if err := r.Get(ctx, client.ObjectKey{Name: tenant.Spec.Namespace}, ns); err == nil {
-			_ = r.Delete(ctx, ns) // policy: delete namespace
-		}
-
-		controllerutil.RemoveFinalizer(&tenant, tenantFinalizer)
-		if err := r.Update(ctx, &tenant); err != nil {
-			return ctrl.Result{}, err
-		}
+	quota, limits, err := r.resolveConfig(ctx, &tenant)
+	if err != nil {
+		logger.Error(err, "invalid tenant configuration")
 		return ctrl.Result{}, nil
 	}
 
 	// --------------------------------------------------------------------------
-	// Ensure finalizer is present
+	// Handle deletion (finalizer)
+	// --------------------------------------------------------------------------
+	if !tenant.DeletionTimestamp.IsZero() {
+		ns := &corev1.Namespace{}
+		if err := r.Get(ctx, client.ObjectKey{Name: tenant.Spec.Namespace}, ns); err == nil {
+			_ = r.Delete(ctx, ns)
+		}
+
+		controllerutil.RemoveFinalizer(&tenant, tenantFinalizer)
+		_ = r.Update(ctx, &tenant)
+		return ctrl.Result{}, nil
+	}
+
+	// --------------------------------------------------------------------------
+	// Ensure finalizer
 	// --------------------------------------------------------------------------
 	if !controllerutil.ContainsFinalizer(&tenant, tenantFinalizer) {
 		controllerutil.AddFinalizer(&tenant, tenantFinalizer)
@@ -87,15 +127,14 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		},
 	}
 
-	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, rq, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, rq, func() error {
 		rq.Spec.Hard = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse(tenant.Spec.Quota.CPU),
-			corev1.ResourceMemory: resource.MustParse(tenant.Spec.Quota.Memory),
-			corev1.ResourcePods:   resource.MustParse(strconv.Itoa(int(tenant.Spec.Quota.Pods))),
+			corev1.ResourceCPU:    resource.MustParse(quota.CPU),
+			corev1.ResourceMemory: resource.MustParse(quota.Memory),
+			corev1.ResourcePods:   resource.MustParse(strconv.Itoa(int(quota.Pods))),
 		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -109,28 +148,27 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		},
 	}
 
-	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, lr, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, lr, func() error {
 		lr.Spec.Limits = []corev1.LimitRangeItem{
 			{
 				Type: corev1.LimitTypeContainer,
 				Default: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.MustParse(tenant.Spec.Limits.DefaultCPU),
-					corev1.ResourceMemory: resource.MustParse(tenant.Spec.Limits.DefaultMemory),
+					corev1.ResourceCPU:    resource.MustParse(limits.DefaultCPU),
+					corev1.ResourceMemory: resource.MustParse(limits.DefaultMemory),
 				},
 				Max: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.MustParse(tenant.Spec.Limits.MaxCPU),
-					corev1.ResourceMemory: resource.MustParse(tenant.Spec.Limits.MaxMemory),
+					corev1.ResourceCPU:    resource.MustParse(limits.MaxCPU),
+					corev1.ResourceMemory: resource.MustParse(limits.MaxMemory),
 				},
 			},
 		}
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	// --------------------------------------------------------------------------
-	// Status
+	// Status (PATCH, not UPDATE)
 	// --------------------------------------------------------------------------
 	original := tenant.DeepCopy()
 
@@ -150,6 +188,9 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, nil
 }
 
+// -----------------------------------------------------------------------------
+// Setup
+// -----------------------------------------------------------------------------
 func (r *TenantReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&platformv1alpha1.Tenant{}).
