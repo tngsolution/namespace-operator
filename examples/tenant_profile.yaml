@@ -1,0 +1,7 @@
+apiVersion: platform.example.com/v1alpha1
+kind: Tenant
+metadata:
+  name: team-qa
+spec:
+  namespace: team-qa
+  profile: small

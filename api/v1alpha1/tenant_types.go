@@ -5,11 +5,19 @@ import (
 )
 
 type TenantSpec struct {
-	// +kubebuilder:validation:MinLength=1
+	// Namespace to create/manage
 	Namespace string `json:"namespace"`
 
-	Quota  QuotaSpec `json:"quota"`
-	Limits LimitSpec `json:"limits"`
+	// Profile reference (preferred)
+	// +optional
+	Profile *string `json:"profile,omitempty"`
+
+	// Legacy inline config (deprecated but supported)
+	// +optional
+	Quota *QuotaSpec `json:"quota,omitempty"`
+
+	// +optional
+	Limits *LimitSpec `json:"limits,omitempty"`
 }
 
 type QuotaSpec struct {
