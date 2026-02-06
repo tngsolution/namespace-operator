@@ -1,0 +1,92 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      preview:
+        description: "Pre-release (-rc.x)"
+        required: false
+        default: "false"
+      dry_run:
+        description: "Dry run"
+        required: false
+        default: "false"
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install tools
+        run: sudo snap install yq
+
+      - name: Ensure repo clean
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Repo is dirty"
+            exit 1
+          fi
+
+      - name: Detect bump level from commits
+        id: level
+        run: |
+          LAST_TAG=$(git tag --sort=-v:refname | head -n1)
+          RANGE="${LAST_TAG}..HEAD"
+          LEVEL="patch"
+
+          if git log $RANGE --pretty=%B | grep -q "BREAKING CHANGE\|feat!:"; then
+            LEVEL="major"
+          elif git log $RANGE --pretty=%B | grep -q "^feat:"; then
+            LEVEL="minor"
+          fi
+
+          echo "level=$LEVEL" >> $GITHUB_OUTPUT
+
+      - name: Compute version
+        id: version
+        run: |
+          LAST_TAG=$(git tag --sort=-v:refname | head -n1 | sed 's/^v//')
+          IFS='.' read MAJOR MINOR PATCH <<< "$LAST_TAG"
+
+          case "${{ steps.level.outputs.level }}" in
+            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH+1)) ;;
+          esac
+
+          BASE="$MAJOR.$MINOR.$PATCH"
+
+          if [ "${{ inputs.preview }}" = "true" ]; then
+            LAST_RC=$(git tag -l "v${BASE}-rc.*" | sort -V | tail -n1)
+            RC=${LAST_RC##*.}
+            RC=${RC:-0}
+            VERSION="${BASE}-rc.$((RC+1))"
+          else
+            VERSION="$BASE"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Apply version
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          yq -i '.version = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
+          yq -i '.appVersion = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
+          yq -i '.image.tag = "'$VERSION'"' manifests/charts/namespace-operator/values.yaml
+
+      - name: Commit
+        if: inputs.dry_run != 'true'
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git commit -am "chore(release): v$VERSION"
+          git push

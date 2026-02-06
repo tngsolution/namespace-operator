@@ -4,7 +4,7 @@
 FROM golang:1.22.7-alpine AS builder
 
 # Sécurité de base
-RUN apk add --no-cache ca-certificates git make
+RUN apk add --no-cache ca-certificates git
 
 WORKDIR /workspace
 
@@ -15,8 +15,6 @@ RUN go mod download
 COPY main.go ./
 COPY api/ api/
 COPY controllers/ controllers/
-
-RUN make generate
 
 # Build du binaire
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
