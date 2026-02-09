@@ -60,9 +60,13 @@ spec:
                 - maxMemory
                 type: object
               namespace:
-                minLength: 1
+                description: Namespace to create/manage
+                type: string
+              profile:
+                description: Profile reference (preferred)
                 type: string
               quota:
+                description: Legacy inline config (deprecated but supported)
                 properties:
                   cpu:
                     pattern: ^([0-9]+m|[0-9]+)$
@@ -80,9 +84,7 @@ spec:
                 - pods
                 type: object
             required:
-            - limits
             - namespace
-            - quota
             type: object
           status:
             properties:

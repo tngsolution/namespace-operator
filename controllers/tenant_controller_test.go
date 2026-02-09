@@ -56,12 +56,12 @@ func TestTenantCreatesNamespace(t *testing.T) {
 		},
 		Spec: platformv1alpha1.TenantSpec{
 			Namespace: "team-a",
-			Quota: platformv1alpha1.QuotaSpec{
+			Quota: &platformv1alpha1.QuotaSpec{
 				CPU:    "1",
 				Memory: "1Gi",
 				Pods:   5,
 			},
-			Limits: platformv1alpha1.LimitSpec{
+			Limits: &platformv1alpha1.LimitSpec{
 				DefaultCPU:    "100m",
 				DefaultMemory: "128Mi",
 				MaxCPU:        "500m",

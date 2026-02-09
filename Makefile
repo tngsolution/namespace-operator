@@ -38,6 +38,7 @@ ENVTEST := $(BIN_DIR)/setup-envtest
 # ------------------------------------------------------------------------------
 PROJECT_NAME := namespace-operator
 VERSION ?= $(shell git describe --tags --abbrev=0 | sed 's/^v//')
+VERSION := 1.2.0
 IMG ?= baabdoul/namespace-operator:$(VERSION)
 
 # ------------------------------------------------------------------------------
