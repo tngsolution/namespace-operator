@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: namespace-profiles
+  namespace: argocd
+spec:
+  project: platform   # ⬅️ IMPORTANT
+
+  source:
+    repoURL: https://github.com/tngsolution/namespace-operator.git
+    targetRevision: main
+    path: gitops
+    directory:
+      recurse: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: namespace-operator-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

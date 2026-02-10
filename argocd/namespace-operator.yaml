@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: namespace-operator
+  namespace: argocd
+spec:
+  project: platform
+
+  source:
+    repoURL: https://github.com/tngsolution/namespace-operator.git
+    targetRevision: main
+    path: manifests/charts/namespace-operator   #
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: namespace-operator-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

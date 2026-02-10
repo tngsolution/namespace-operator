@@ -1,0 +1,14 @@
+apiVersion: platform.example.com/v1alpha1
+kind: TenantProfile
+metadata:
+  name: large
+spec:
+  quota:
+    cpu: "32"
+    memory: "64Gi"
+    pods: 500
+  limits:
+    defaultCPU: "500m"
+    defaultMemory: "1Gi"
+    maxCPU: "4"
+    maxMemory: "8Gi"

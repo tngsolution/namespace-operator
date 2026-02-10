@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd
+spec:
+  description: Platform engineering components (operators, profiles, tenants)
+
+  # Repos Git autorisés
+  sourceRepos:
+    - https://github.com/tngsolution/namespace-operator.git
+
+  # Où Argo CD a le droit de déployer
+  destinations:
+    - namespace: namespace-operator-system
+      server: https://kubernetes.default.svc
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+
+  # Ressources autorisées (CRDs inclus)
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
