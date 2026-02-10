@@ -8,7 +8,7 @@ spec:
     memory: "64Gi"
     pods: 500
   limits:
-    defaultCPU: "500m"
+    defaultCpu: "500m"
     defaultMemory: "1Gi"
-    maxCPU: "4"
+    maxCpu: "4"
     maxMemory: "8Gi"

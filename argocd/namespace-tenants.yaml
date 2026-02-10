@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: namespace-profiles
+  name: namespace-tenants
   namespace: argocd
 spec:
   project: platform   # ⬅️ IMPORTANT
@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: https://github.com/tngsolution/namespace-operator.git
     targetRevision: main
-    path: gitops/profiles
+    path: gitops/tenants
     directory:
       recurse: true
 
