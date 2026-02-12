@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	platformv1alpha1 "github.com/tngs/namespace-operator/api/v1alpha1"
-
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/rest"
@@ -26,6 +26,7 @@ func TestMain(m *testing.M) {
 	// Register schemes (Go side)
 	// ---------------------------------------------------------------------
 	utilruntime.Must(corev1.AddToScheme(scheme))
+	utilruntime.Must(networkingv1.AddToScheme(scheme)) // 🔥 ADD THIS
 	utilruntime.Must(platformv1alpha1.AddToScheme(scheme))
 
 	// ---------------------------------------------------------------------
