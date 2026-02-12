@@ -141,6 +141,9 @@ manifests: controller-gen
 fmt: go
 	$(GO) fmt ./...
 
+.PHONY: lint
+lint: vet fmt ## Same behavior as before
+
 .PHONY: vet
 vet: go
 	$(GO) vet ./...
