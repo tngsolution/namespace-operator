@@ -5,3 +5,12 @@ metadata:
 spec:
   namespace: team-devops
   profile: small
+  network:
+    ingress:
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                name: shared
+            podSelector:
+              matchLabels:
+                app: frontend

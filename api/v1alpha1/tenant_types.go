@@ -18,6 +18,50 @@ type TenantSpec struct {
 
 	// +optional
 	Limits *LimitSpec `json:"limits,omitempty"`
+
+	// Network policy rules (ingress/egress)
+	// +optional
+	Network *NetworkSpec `json:"network,omitempty"`
+}
+
+// NetworkSpec définit les règles réseau personnalisées pour un tenant
+type NetworkSpec struct {
+	// Ingress rules
+	// +optional
+	Ingress []NetworkPolicyRule `json:"ingress,omitempty"`
+
+	// Egress rules
+	// +optional
+	Egress []NetworkPolicyRule `json:"egress,omitempty"`
+}
+
+// NetworkPolicyRule représente une règle d'ingress ou d'egress simplifiée
+type NetworkPolicyRule struct {
+	// From définit les sources autorisées (pour ingress)
+	// +optional
+	From []NetworkPeer `json:"from,omitempty"`
+
+	// To définit les destinations autorisées (pour egress)
+	// +optional
+	To []NetworkPeer `json:"to,omitempty"`
+}
+
+// NetworkPeer représente un peer réseau (podSelector, namespaceSelector, ipBlock)
+type NetworkPeer struct {
+	// +optional
+	PodSelector *metav1.LabelSelector `json:"podSelector,omitempty"`
+
+	// +optional
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+
+	// +optional
+	IPBlock *IPBlock `json:"ipBlock,omitempty"`
+}
+
+// IPBlock permet de spécifier un bloc d'adresses IP
+type IPBlock struct {
+	CIDR   string   `json:"cidr"`
+	Except []string `json:"except,omitempty"`
 }
 
 type QuotaSpec struct {

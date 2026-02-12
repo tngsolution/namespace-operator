@@ -1,34 +1,46 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name:  {{ include "namespace-operator.fullname" . }}
+  name: {{ include "namespace-operator.fullname" . }}
   labels:
 {{ include "namespace-operator.labels" . | indent 4 }}
 rules:
+
+  # Leader election
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
+  # Tenant CRD
   - apiGroups: ["platform.example.com"]
-    resources: ["tenants", "tenants/status"]
+    resources: ["tenants"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
+  - apiGroups: ["platform.example.com"]
+    resources: ["tenants/status"]
+    verbs: ["get", "update", "patch"]
+
+  # TenantProfile (read-only)
   - apiGroups: ["platform.example.com"]
     resources: ["tenantprofiles"]
     verbs: ["get", "list", "watch"]
 
+  # Namespace management
   - apiGroups: [""]
     resources: ["namespaces"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
+  # Quotas & limits
   - apiGroups: [""]
     resources: ["limitranges", "resourcequotas"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
+  # Network policies
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+  # Events
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["create", "patch"]
-
-  - apiGroups: ["coordination.k8s.io"]
-    resources: ["leases"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

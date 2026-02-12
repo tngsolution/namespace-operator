@@ -9,6 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+
+	networkingv1 "k8s.io/api/networking/v1" // 🔥 IMPORTANT
+
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,8 +25,9 @@ var (
 )
 
 func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))   // ✅ Namespace, Pod, etc
-	utilruntime.Must(platformv1alpha1.AddToScheme(scheme)) // ✅ Tenant CRD
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(networkingv1.AddToScheme(scheme))     // 🔥 REQUIRED
+	utilruntime.Must(platformv1alpha1.AddToScheme(scheme)) // Tenant & TenantProfile
 }
 
 func main() {
@@ -46,6 +50,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// ---------------------------------------------------------------------
+	// Tenant controller
+	// ---------------------------------------------------------------------
 	if err = (&controllers.TenantReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -54,7 +61,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Health & readiness endpoints
+	// ---------------------------------------------------------------------
+	// NetworkPolicy controller  🔥🔥🔥
+	// ---------------------------------------------------------------------
+	if err = (&controllers.NetworkPolicyReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "NetworkPolicy")
+		os.Exit(1)
+	}
+
+	// ---------------------------------------------------------------------
+	// Health probes
+	// ---------------------------------------------------------------------
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		os.Exit(1)
 	}
