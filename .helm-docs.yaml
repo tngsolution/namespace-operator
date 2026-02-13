@@ -1,0 +1,3 @@
+chart-search-root: manifests/charts/namespace-operator/
+template-files:
+  - manifests/charts/namespace-operator/README.md.gotmpl

@@ -1,0 +1,39 @@
+name: Publish Helm Chart (OCI)
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-helm:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+          -u ${{ github.actor }} \
+          --password-stdin
+
+      - name: Lint Helm chart
+        run: helm lint manifests/charts/namespace-operator
+
+      - name: Package Helm chart
+        run: helm package manifests/charts/namespace-operator
+
+      - name: Push to GHCR (OCI)
+        run: |
+          helm push namespace-operator-*.tgz \
+          oci://ghcr.io/${{ github.repository_owner }}

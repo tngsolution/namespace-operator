@@ -1,59 +1,88 @@
-# Default values for namespace-operator.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# ------------------------------------------------------------------------------
+# Global
+# ------------------------------------------------------------------------------
 
-# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+# -- Number of controller replicas
 replicaCount: 1
-# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+
+# ------------------------------------------------------------------------------
+# Image
+# ------------------------------------------------------------------------------
+
 image:
+  # -- Container image repository
   repository: baabdoul/namespace-operator
-  # Overrides the image tag whose default is the chart appVersion.
+
+  # -- Image tag (defaults to Chart.appVersion if empty)
   tag: "1.3.0"
-  # This sets the pull policy for images.
+
+  # -- Image pull policy (Always, IfNotPresent, Never)
   pullPolicy: Always
-# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+
+# -- Secrets for private registry authentication
 imagePullSecrets: []
-# This is to override the chart name.
+
+# -- Override chart name
 nameOverride: ""
+
+# -- Override full resource name
 fullnameOverride: ""
-# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+
+# ------------------------------------------------------------------------------
+# Service Account
+# ------------------------------------------------------------------------------
+
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Create a ServiceAccount
   create: true
-  # Automatically mount a ServiceAccount's API credentials?
+
+  # -- Automatically mount ServiceAccount token
   automount: true
-  # Annotations to add to the service account
+
+  # -- ServiceAccount annotations
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+
+  # -- ServiceAccount name (auto-generated if empty and create=true)
   name: "namespace-operator-controller-manager"
-# This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+# ------------------------------------------------------------------------------
+# Pod Configuration
+# ------------------------------------------------------------------------------
+
+# -- Additional pod annotations
 podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+
+# -- Additional pod labels
 podLabels: {}
+
 podSecurityContext:
+  # -- Enforce running as non-root user
   runAsNonRoot: true
-  # fsGroup: 2000
+
 securityContext:
+  # -- Prevent privilege escalation
   allowPrivilegeEscalation: false
+
+  # -- Mount root filesystem as read-only
   readOnlyRootFilesystem: true
+
   capabilities:
+    # -- Drop Linux capabilities
     drop:
       - ALL
-      # capabilities:
-      #   drop:
-      #   - ALL
-      # readOnlyRootFilesystem: true
-      # runAsNonRoot: true
-      # runAsUser: 1000
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+
+# ------------------------------------------------------------------------------
+# Service
+# ------------------------------------------------------------------------------
+
 service:
-  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  # -- Service type (ClusterIP, NodePort, LoadBalancer)
   type: ClusterIP
-  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+
+  # -- Service port
   port: 8081
+
+# -- Container ports exposed by the controller
 ports:
   - name: metrics
     containerPort: 8080
@@ -61,112 +90,142 @@ ports:
   - name: health
     containerPort: 8081
     protocol: TCP
+
+# -- Enable leader election (recommended in HA mode)
 leaderElection: true
+
+# ------------------------------------------------------------------------------
+# Manager
+# ------------------------------------------------------------------------------
+
 manager:
   health:
+    # -- Enable health endpoint
     enabled: true
+
+    # -- Health probe bind address
     bindAddress: ":8081"
+
   metrics:
+    # -- Enable metrics endpoint
     enabled: true
+
+    # -- Metrics bind address
     bindAddress: ":8080"
-# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+
+# ------------------------------------------------------------------------------
+# Ingress
+# ------------------------------------------------------------------------------
+
 ingress:
+  # -- Enable Ingress resource
   enabled: false
+
+  # -- Ingress class name
   className: ""
+
+  # -- Ingress annotations
   annotations: {}
-  # kubernetes.io/ingress.class: nginx
-  # kubernetes.io/tls-acme: "true"
+
   hosts:
     - host: chart-example.local
       paths:
         - path: /
           pathType: ImplementationSpecific
+
+  # -- TLS configuration
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
-# -- Expose the service via gateway-api HTTPRoute
-# Requires Gateway API resources and suitable controller installed within the cluster
-# (see: https://gateway-api.sigs.k8s.io/guides/)
+
+# ------------------------------------------------------------------------------
+# Gateway API HTTPRoute
+# ------------------------------------------------------------------------------
+
 httpRoute:
-  # HTTPRoute enabled.
+  # -- Enable HTTPRoute resource
   enabled: false
-  # HTTPRoute annotations.
+
+  # -- HTTPRoute annotations
   annotations: {}
-  # Which Gateways this Route is attached to.
+
+  # -- Gateway parent references
   parentRefs:
     - name: gateway
       sectionName: http
-      # namespace: default
-  # Hostnames matching HTTP header.
+
+  # -- Hostnames
   hostnames:
     - chart-example.local
-  # List of rules and filters applied.
+
+  # -- Routing rules
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /headers
-            #   filters:
-            #   - type: RequestHeaderModifier
-            #     requestHeaderModifier:
-            #       set:
-            #       - name: My-Overwrite-Header
-            #         value: this-is-the-only-value
-            #       remove:
-            #       - User-Agent
-            # - matches:
-            #   - path:
-            #       type: PathPrefix
-            #       value: /echo
-            #     headers:
-            #     - name: version
-            #       value: v2
-resources: {}
-# We usually recommend not to specify default resources and to leave this as a conscious
-# choice for the user. This also increases chances charts run on environments with little
-# resources, such as Minikube. If you do want to specify resources, uncomment the following
-# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-# limits:
-#   cpu: 100m
-#   memory: 128Mi
-# requests:
-#   cpu: 100m
-#   memory: 128Mi
 
-# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+# ------------------------------------------------------------------------------
+# Resources
+# ------------------------------------------------------------------------------
+
+# -- CPU/Memory resource requests & limits
+resources: {}
+
+# ------------------------------------------------------------------------------
+# Probes
+# ------------------------------------------------------------------------------
+
 livenessProbe:
+  # -- Liveness probe configuration
   httpGet:
     path: /healthz
     port: health
   initialDelaySeconds: 15
   periodSeconds: 20
+
 readinessProbe:
+  # -- Readiness probe configuration
   httpGet:
     path: /readyz
     port: health
   initialDelaySeconds: 5
   periodSeconds: 10
-# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+
+# ------------------------------------------------------------------------------
+# Autoscaling
+# ------------------------------------------------------------------------------
+
 autoscaling:
+  # -- Enable HorizontalPodAutoscaler
   enabled: false
+
+  # -- Minimum replicas
   minReplicas: 1
+
+  # -- Maximum replicas
   maxReplicas: 100
+
+  # -- Target CPU utilization percentage
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-# Additional volumes on the output Deployment definition.
+
+# ------------------------------------------------------------------------------
+# Extra Volumes
+# ------------------------------------------------------------------------------
+
+# -- Additional volumes
 volumes: []
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
 
-# Additional volumeMounts on the output Deployment definition.
+# -- Additional volume mounts
 volumeMounts: []
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
 
+# ------------------------------------------------------------------------------
+# Scheduling
+# ------------------------------------------------------------------------------
+
+# -- Node selector constraints
 nodeSelector: {}
+
+# -- Tolerations
 tolerations: []
+
+# -- Affinity rules
 affinity: {}

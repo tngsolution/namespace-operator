@@ -48,6 +48,7 @@ IMG ?= baabdoul/namespace-operator:$(VERSION)
 HELM_CHART := manifests/charts/namespace-operator
 HELM_RELEASE := namespace-operator
 HELM_NAMESPACE := namespace-operator-system
+HELM_DOCS ?= helm-docs
 
 # ------------------------------------------------------------------------------
 # Go (vendored)
@@ -228,6 +229,10 @@ helm-upgrade:
 helm-uninstall:
 	helm uninstall $(HELM_RELEASE) \
 	  --namespace $(HELM_NAMESPACE)
+
+.PHONY: docs
+docs:
+	$(HELM_DOCS)
 
 # ==============================================================================
 # Info

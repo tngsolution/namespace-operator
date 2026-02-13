@@ -80,7 +80,7 @@ jobs:
           yq -i '.version = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
           yq -i '.appVersion = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
           yq -i '.image.tag = "'$VERSION'"' manifests/charts/namespace-operator/values.yaml
-
+          sed -i.bak "s/^VERSION := .*/VERSION := ${VERSION}/" Makefile && rm Makefile.bak
       - name: Commit
         if: inputs.dry_run != 'true'
         run: |

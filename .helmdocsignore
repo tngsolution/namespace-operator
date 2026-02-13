@@ -1,0 +1,16 @@
+# Ignore generated files
+README.md
+
+# Ignore dependency charts
+charts/
+
+# Ignore templates that are not part of documentation
+templates/tests/
+
+# Ignore backup or temp files
+*.swp
+*.tmp
+*.bak
+
+# macOS
+.DS_Store
