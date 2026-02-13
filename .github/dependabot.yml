@@ -1,0 +1,49 @@
+version: 2
+
+updates:
+  # Go modules (go.mod)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "05:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(go)"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "05:30"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(ci)"
+
+  # Helm dependencies (si tu ajoutes des charts en dependency dans Chart.yaml)
+  - package-ecosystem: "helm"
+    directory: "/manifests/charts/namespace-operator"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "deps(helm)"
+
+  # Docker images (si tu as des images dans values.yaml ou ailleurs)  
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:30"
+      timezone: "Europe/Paris"
+    commit-message:
+      prefix: "deps(docker)"
