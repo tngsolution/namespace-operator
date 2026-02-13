@@ -32,7 +32,6 @@ func (r *NetworkPolicyReconciler) Reconcile(
 ) (ctrl.Result, error) {
 
 	logger := log.FromContext(ctx)
-
 	// -------------------------------------------------------------------------
 	// Get Namespace
 	// -------------------------------------------------------------------------
@@ -41,9 +40,15 @@ func (r *NetworkPolicyReconciler) Reconcile(
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// 🔥 Filter
+	if ns.Labels[ManagedByLabelKey] != ManagedByLabelValue {
+		return ctrl.Result{}, nil
+	}
+
 	// -------------------------------------------------------------------------
 	// Find Tenant owning this namespace (envtest-safe)
 	// -------------------------------------------------------------------------
+	// Find Tenant matching namespace
 	var tenants platformv1alpha1.TenantList
 	if err := r.List(ctx, &tenants); err != nil {
 		logger.Error(err, "unable to list Tenants")
@@ -67,7 +72,6 @@ func (r *NetworkPolicyReconciler) Reconcile(
 	// Apply policies (Server-Side Apply requires GVK!)
 	// -------------------------------------------------------------------------
 	for _, np := range policies {
-
 		// 🔥 REQUIRED for SSA + envtest
 		np.SetGroupVersionKind(
 			networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"),

@@ -35,6 +35,9 @@ func TestNetworkPolicyReconciler_DefaultDeny(t *testing.T) {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-ns",
+			Labels: map[string]string{
+				ManagedByLabelKey: ManagedByLabelValue,
+			},
 		},
 	}
 	g.Expect(k8sClient.Create(context.Background(), ns)).To(Succeed())
@@ -84,6 +87,9 @@ func TestNetworkPolicyReconciler_CustomNetwork(t *testing.T) {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "custom-ns",
+			Labels: map[string]string{
+				ManagedByLabelKey: ManagedByLabelValue,
+			},
 		},
 	}
 	g.Expect(k8sClient.Create(context.Background(), ns)).To(Succeed())
