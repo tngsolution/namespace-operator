@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: "0 3 * * 1"   # Tous les lundis à 03:00 UTC
+    - cron: '0 3 * * 0'
 
 permissions:
   contents: read
@@ -18,27 +18,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repository
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Go (version compatible avec ton go.mod)
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
           cache: true
 
-      # Initialize CodeQL
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: go
 
-      # Autobuild (recommandé pour Go)
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
+      - name: Install controller-gen
+        run: go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0
 
-      # Analyze
+      - name: Generate code
+        run: controller-gen object paths="./..."
+
+      - name: Build project
+        run: go build ./...
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
