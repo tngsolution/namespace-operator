@@ -17,6 +17,11 @@ jobs:
     name: Analyze (Go)
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ "go" ]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,8 +35,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: go
-
+          languages: ${{ matrix.language }}
       - name: Install controller-gen
         run: go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0
 
