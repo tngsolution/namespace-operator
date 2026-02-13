@@ -11,29 +11,31 @@ on:
 permissions:
   contents: read
   security-events: write
-  actions: read
 
 jobs:
   analyze:
-    name: Analyze (Go)
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-
-      - name: Initialize CodeQL
+      - name: Init CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: go
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
+      - name: Install toolchain
+        run: |
+          make go
+          make controller-gen
 
-      - name: Perform CodeQL Analysis
+      - name: Generate code
+        run: |
+          make generate
+          make manifests
+
+      - name: Build
+        run: make build
+
+      - name: Run CodeQL
         uses: github/codeql-action/analyze@v4
