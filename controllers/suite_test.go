@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	platformv1alpha1 "github.com/tngs/namespace-operator/api/v1alpha1"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,6 +23,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
+
 	// ---------------------------------------------------------------------
 	// Register schemes (Go side)
 	// ---------------------------------------------------------------------
@@ -30,15 +32,23 @@ func TestMain(m *testing.M) {
 	utilruntime.Must(platformv1alpha1.AddToScheme(scheme))
 
 	// ---------------------------------------------------------------------
-	// Start envtest with CRDs
+	// Resolve absolute CRD path (important!)
 	// ---------------------------------------------------------------------
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{
-			filepath.Join("..", "manifests", "charts", "namespace-operator", "crds"), // ⬅️ CRITIQUE
-		},
+	crdPath, err := filepath.Abs(
+		filepath.Join("..", "manifests", "charts", "namespace-operator", "crds"),
+	)
+	if err != nil {
+		panic(err)
 	}
 
-	var err error
+	// ---------------------------------------------------------------------
+	// Start envtest
+	// ---------------------------------------------------------------------
+	testEnv = &envtest.Environment{
+		CRDDirectoryPaths:     []string{crdPath},
+		ErrorIfCRDPathMissing: true,
+	}
+
 	cfg, err = testEnv.Start()
 	if err != nil {
 		panic(err)
@@ -46,6 +56,9 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	_ = testEnv.Stop()
+	if err := testEnv.Stop(); err != nil {
+		panic(err)
+	}
+
 	os.Exit(code)
 }

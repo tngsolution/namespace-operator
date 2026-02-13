@@ -36,8 +36,10 @@ func TestTenantCreatesNamespace(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	reconciler := &TenantReconciler{
-		Client: k8sClient,
+		Client: mgr.GetClient(), // 🔥 IMPORTANT
+		Scheme: mgr.GetScheme(), // 🔥 IMPORTANT
 	}
+
 	g.Expect(reconciler.SetupWithManager(mgr)).To(Succeed())
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -48,7 +50,7 @@ func TestTenantCreatesNamespace(t *testing.T) {
 	}()
 
 	// -------------------------------------------------------------------------
-	// Tenant CR (GVK FORECED)
+	// Create Tenant
 	// -------------------------------------------------------------------------
 	tenant := &platformv1alpha1.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
@@ -70,16 +72,14 @@ func TestTenantCreatesNamespace(t *testing.T) {
 		},
 	}
 
-	// 🔑 FORCED GVK
+	// Set GVK (important for unstructured objects)
 	tenant.SetGroupVersionKind(
 		platformv1alpha1.GroupVersion.WithKind("Tenant"),
 	)
 
 	g.Expect(k8sClient.Create(context.Background(), tenant)).To(Succeed())
 
-	// -------------------------------------------------------------------------
-	// 	ASSERT Namespace is created (eventually, with timeout)
-	// -------------------------------------------------------------------------
+	// 🔥 Wait until namespace exists
 	ns := &corev1.Namespace{}
 	g.Eventually(func() error {
 		return k8sClient.Get(
@@ -87,5 +87,5 @@ func TestTenantCreatesNamespace(t *testing.T) {
 			client.ObjectKey{Name: "team-a"},
 			ns,
 		)
-	}, 10*time.Second).Should(Succeed())
+	}, 10*time.Second, 500*time.Millisecond).Should(Succeed())
 }
