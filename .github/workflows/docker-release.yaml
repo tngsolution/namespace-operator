@@ -8,7 +8,7 @@ on:
 env:
   REGISTRY: docker.io
   IMAGE_NAME: baabdoul/namespace-operator
-  GO_VERSION: "1.22"
+  GO_VERSION: "1.24"
 
 jobs:
   go-tools:

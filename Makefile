@@ -32,7 +32,10 @@ endif
 
 BIN_DIR := $(CURDIR)/.bin
 ENVTEST := $(BIN_DIR)/setup-envtest
+CONTROLLER_RUNTIME_VERSION := v0.22.5
+ENVTEST_URL := https://github.com/kubernetes-sigs/controller-runtime/releases/download/$(CONTROLLER_RUNTIME_VERSION)/setup-envtest-$(OS)-$(ARCH)
 
+K8S_VERSION := 1.29.0
 # ------------------------------------------------------------------------------
 # Project
 # ------------------------------------------------------------------------------
@@ -54,7 +57,7 @@ HELM_DOCS ?= helm-docs
 # Go (vendored)
 # ------------------------------------------------------------------------------
 
-GO_VERSION := 1.22.7
+GO_VERSION := 1.24.0
 
 GO_TGZ := go$(GO_VERSION).$(OS)-$(ARCH).tar.gz
 GO_URL := https://go.dev/dl/$(GO_TGZ)
@@ -119,10 +122,25 @@ controller-gen: go
 		GOBIN=$(BIN_DIR) $(GO) install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0 ;\
 	fi
 
+.PHONY: deps
+deps:
+	$(GO) mod tidy
+	$(GO) mod verify
+
+.PHONY: go-cmd
+go-cmd: go
+	@if [ -z "$(ARGS)" ]; then \
+		echo "Usage: make go-cmd ARGS=\"<go arguments>\""; \
+		exit 1; \
+	fi
+	$(GO) $(ARGS)
+
 .PHONY: envtest
-envtest: go
+envtest:
+	@mkdir -p $(BIN_DIR)
 	@if [ ! -x "$(ENVTEST)" ]; then \
-		GOBIN=$(BIN_DIR) $(GO) install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest ;\
+		curl -fL $(ENVTEST_URL) -o $(ENVTEST); \
+		chmod +x $(ENVTEST); \
 	fi
 
 # ==============================================================================
@@ -152,7 +170,7 @@ vet: go
 .PHONY: test
 test: envtest generate manifests fmt vet
 	$(ENVTEST) use latest --bin-dir $(BIN_DIR) >/dev/null
-	KUBEBUILDER_ASSETS=$$($(ENVTEST) use latest --bin-dir $(BIN_DIR) -p path) \
+	KUBEBUILDER_ASSETS=$$($(ENVTEST) use $(K8S_VERSION) --bin-dir $(BIN_DIR) -p path) \
 	$(GO) test ./... -coverprofile cover.out
 
 # ==============================================================================
@@ -203,12 +221,7 @@ ifeq ($(OS),linux)
 	  --local dockerfile=. \
 	  --output type=image,name=$(IMG),push=true
 else
-ifeq ($(DOCKER_BUILDX),yes)
-	$(DOCKER) buildx build --platform $(PLATFORMS) -t $(IMG) --push .
-else
-	$(DOCKER) build -t $(IMG) .
 	$(DOCKER) push $(IMG)
-endif
 endif
 
 # ==============================================================================
