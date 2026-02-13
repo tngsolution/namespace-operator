@@ -23,9 +23,10 @@ jobs:
           version: v3.14.0
 
       - name: Login to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
-          -u ${{ github.actor }} \
-          --password-stdin
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+            -u "${{ github.actor }}" \
+            --password-stdin
 
       - name: Lint Helm chart
         run: helm lint manifests/charts/namespace-operator
@@ -36,4 +37,4 @@ jobs:
       - name: Push to GHCR (OCI)
         run: |
           helm push namespace-operator-*.tgz \
-          oci://ghcr.io/${{ github.repository_owner }}
+            oci://ghcr.io/${{ github.repository_owner }}

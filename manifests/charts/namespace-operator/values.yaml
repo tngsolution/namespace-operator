@@ -4,84 +4,62 @@
 
 # -- Number of controller replicas
 replicaCount: 1
-
 # ------------------------------------------------------------------------------
 # Image
 # ------------------------------------------------------------------------------
-
 image:
   # -- Container image repository
   repository: baabdoul/namespace-operator
-
   # -- Image tag (defaults to Chart.appVersion if empty)
-  tag: "1.3.0"
-
+  tag: "1.3.1"
   # -- Image pull policy (Always, IfNotPresent, Never)
   pullPolicy: Always
-
 # -- Secrets for private registry authentication
 imagePullSecrets: []
-
 # -- Override chart name
 nameOverride: ""
-
 # -- Override full resource name
 fullnameOverride: ""
-
 # ------------------------------------------------------------------------------
 # Service Account
 # ------------------------------------------------------------------------------
-
 serviceAccount:
   # -- Create a ServiceAccount
   create: true
-
   # -- Automatically mount ServiceAccount token
   automount: true
-
   # -- ServiceAccount annotations
   annotations: {}
-
   # -- ServiceAccount name (auto-generated if empty and create=true)
   name: "namespace-operator-controller-manager"
-
 # ------------------------------------------------------------------------------
 # Pod Configuration
 # ------------------------------------------------------------------------------
 
 # -- Additional pod annotations
 podAnnotations: {}
-
 # -- Additional pod labels
 podLabels: {}
-
 podSecurityContext:
   # -- Enforce running as non-root user
   runAsNonRoot: true
-
 securityContext:
   # -- Prevent privilege escalation
   allowPrivilegeEscalation: false
-
   # -- Mount root filesystem as read-only
   readOnlyRootFilesystem: true
-
   capabilities:
     # -- Drop Linux capabilities
     drop:
       - ALL
-
 # ------------------------------------------------------------------------------
 # Service
 # ------------------------------------------------------------------------------
-
 service:
   # -- Service type (ClusterIP, NodePort, LoadBalancer)
   type: ClusterIP
-
   # -- Service port
   port: 8081
-
 # -- Container ports exposed by the controller
 ports:
   - name: metrics
@@ -90,90 +68,69 @@ ports:
   - name: health
     containerPort: 8081
     protocol: TCP
-
 # -- Enable leader election (recommended in HA mode)
 leaderElection: true
-
 # ------------------------------------------------------------------------------
 # Manager
 # ------------------------------------------------------------------------------
-
 manager:
   health:
     # -- Enable health endpoint
     enabled: true
-
     # -- Health probe bind address
     bindAddress: ":8081"
-
   metrics:
     # -- Enable metrics endpoint
     enabled: true
-
     # -- Metrics bind address
     bindAddress: ":8080"
-
 # ------------------------------------------------------------------------------
 # Ingress
 # ------------------------------------------------------------------------------
-
 ingress:
   # -- Enable Ingress resource
   enabled: false
-
   # -- Ingress class name
   className: ""
-
   # -- Ingress annotations
   annotations: {}
-
   hosts:
     - host: chart-example.local
       paths:
         - path: /
           pathType: ImplementationSpecific
-
   # -- TLS configuration
   tls: []
-
 # ------------------------------------------------------------------------------
 # Gateway API HTTPRoute
 # ------------------------------------------------------------------------------
-
 httpRoute:
   # -- Enable HTTPRoute resource
   enabled: false
-
   # -- HTTPRoute annotations
   annotations: {}
-
   # -- Gateway parent references
   parentRefs:
     - name: gateway
       sectionName: http
-
   # -- Hostnames
   hostnames:
     - chart-example.local
-
   # -- Routing rules
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /headers
-
 # ------------------------------------------------------------------------------
 # Resources
 # ------------------------------------------------------------------------------
 
 # -- CPU/Memory resource requests & limits
 resources: {}
-
 # ------------------------------------------------------------------------------
 # Probes
 # ------------------------------------------------------------------------------
-
 livenessProbe:
   # -- Liveness probe configuration
   httpGet:
@@ -181,7 +138,6 @@ livenessProbe:
     port: health
   initialDelaySeconds: 15
   periodSeconds: 20
-
 readinessProbe:
   # -- Readiness probe configuration
   httpGet:
@@ -189,43 +145,33 @@ readinessProbe:
     port: health
   initialDelaySeconds: 5
   periodSeconds: 10
-
 # ------------------------------------------------------------------------------
 # Autoscaling
 # ------------------------------------------------------------------------------
-
 autoscaling:
   # -- Enable HorizontalPodAutoscaler
   enabled: false
-
   # -- Minimum replicas
   minReplicas: 1
-
   # -- Maximum replicas
   maxReplicas: 100
-
   # -- Target CPU utilization percentage
   targetCPUUtilizationPercentage: 80
-
 # ------------------------------------------------------------------------------
 # Extra Volumes
 # ------------------------------------------------------------------------------
 
 # -- Additional volumes
 volumes: []
-
 # -- Additional volume mounts
 volumeMounts: []
-
 # ------------------------------------------------------------------------------
 # Scheduling
 # ------------------------------------------------------------------------------
 
 # -- Node selector constraints
 nodeSelector: {}
-
 # -- Tolerations
 tolerations: []
-
 # -- Affinity rules
 affinity: {}
