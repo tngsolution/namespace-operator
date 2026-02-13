@@ -31,7 +31,7 @@ func TestNetworkPolicyReconciler_DefaultDeny(t *testing.T) {
 		Client: k8sClient,
 	}
 
-	// Create namespace
+	// Create namespace managed by operator
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-ns",
@@ -42,7 +42,7 @@ func TestNetworkPolicyReconciler_DefaultDeny(t *testing.T) {
 	}
 	g.Expect(k8sClient.Create(context.Background(), ns)).To(Succeed())
 
-	// 🔥 Manually trigger reconcile
+	// Trigger reconcile manually
 	_, err = reconciler.Reconcile(
 		context.Background(),
 		ctrl.Request{
@@ -51,7 +51,7 @@ func TestNetworkPolicyReconciler_DefaultDeny(t *testing.T) {
 	)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	// Assert default deny ingress exists
+	// Assert default deny ingress
 	npIngress := &networkingv1.NetworkPolicy{}
 	g.Expect(k8sClient.Get(
 		context.Background(),
@@ -59,7 +59,7 @@ func TestNetworkPolicyReconciler_DefaultDeny(t *testing.T) {
 		npIngress,
 	)).To(Succeed())
 
-	// Assert default deny egress exists
+	// Assert default deny egress
 	npEgress := &networkingv1.NetworkPolicy{}
 	g.Expect(k8sClient.Get(
 		context.Background(),
@@ -83,7 +83,7 @@ func TestNetworkPolicyReconciler_CustomNetwork(t *testing.T) {
 		Client: k8sClient,
 	}
 
-	// Create namespace
+	// Create namespace managed by operator
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "custom-ns",
@@ -94,7 +94,7 @@ func TestNetworkPolicyReconciler_CustomNetwork(t *testing.T) {
 	}
 	g.Expect(k8sClient.Create(context.Background(), ns)).To(Succeed())
 
-	// Create Tenant with custom network rules
+	// Create Tenant with custom rules
 	tenant := &platformv1alpha1.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "tenant1",
@@ -130,13 +130,9 @@ func TestNetworkPolicyReconciler_CustomNetwork(t *testing.T) {
 		},
 	}
 
-	tenant.SetGroupVersionKind(
-		platformv1alpha1.GroupVersion.WithKind("Tenant"),
-	)
-
 	g.Expect(k8sClient.Create(context.Background(), tenant)).To(Succeed())
 
-	// 🔥 Manually trigger reconcile
+	// Trigger reconcile manually
 	_, err = reconciler.Reconcile(
 		context.Background(),
 		ctrl.Request{
@@ -145,7 +141,7 @@ func TestNetworkPolicyReconciler_CustomNetwork(t *testing.T) {
 	)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	// Assert custom ingress exists
+	// Assert custom ingress
 	npIngress := &networkingv1.NetworkPolicy{}
 	g.Expect(k8sClient.Get(
 		context.Background(),
@@ -153,7 +149,7 @@ func TestNetworkPolicyReconciler_CustomNetwork(t *testing.T) {
 		npIngress,
 	)).To(Succeed())
 
-	// Assert custom egress exists
+	// Assert custom egress
 	npEgress := &networkingv1.NetworkPolicy{}
 	g.Expect(k8sClient.Get(
 		context.Background(),

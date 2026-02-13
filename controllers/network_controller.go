@@ -16,6 +16,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+// -----------------------------------------------------------------------------
+// RBAC
+// -----------------------------------------------------------------------------
+
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 // +kubebuilder:rbac:groups="platform.example.com",resources=tenants,verbs=get;list;watch
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies,verbs=get;list;watch;create;update;patch
@@ -32,6 +36,7 @@ func (r *NetworkPolicyReconciler) Reconcile(
 ) (ctrl.Result, error) {
 
 	logger := log.FromContext(ctx)
+
 	// -------------------------------------------------------------------------
 	// Get Namespace
 	// -------------------------------------------------------------------------
@@ -40,15 +45,20 @@ func (r *NetworkPolicyReconciler) Reconcile(
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// 🔥 Filter
+	// Skip if namespace is terminating
+	if ns.DeletionTimestamp != nil {
+		return ctrl.Result{}, nil
+	}
+
+	// Skip if not managed by this operator
 	if ns.Labels[ManagedByLabelKey] != ManagedByLabelValue {
 		return ctrl.Result{}, nil
 	}
 
 	// -------------------------------------------------------------------------
-	// Find Tenant owning this namespace (envtest-safe)
+	// Find Tenant owning this namespace
 	// -------------------------------------------------------------------------
-	// Find Tenant matching namespace
+
 	var tenants platformv1alpha1.TenantList
 	if err := r.List(ctx, &tenants); err != nil {
 		logger.Error(err, "unable to list Tenants")
@@ -64,15 +74,15 @@ func (r *NetworkPolicyReconciler) Reconcile(
 	}
 
 	// -------------------------------------------------------------------------
-	// Build policies (external builder file)
+	// Build policies
 	// -------------------------------------------------------------------------
 	policies := r.buildPolicies(ns.Name, tenant)
 
 	// -------------------------------------------------------------------------
-	// Apply policies (Server-Side Apply requires GVK!)
+	// Apply policies (Server-Side Apply)
 	// -------------------------------------------------------------------------
 	for _, np := range policies {
-		// 🔥 REQUIRED for SSA + envtest
+
 		np.SetGroupVersionKind(
 			networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"),
 		)
@@ -81,9 +91,11 @@ func (r *NetworkPolicyReconciler) Reconcile(
 			ctx,
 			np,
 			client.Apply,
-			client.FieldOwner("network-controller"),
+			client.FieldOwner("namespace-operator"),
 			client.ForceOwnership,
-		); err != nil && !apierrors.IsAlreadyExists(err) {
+		); err != nil &&
+			!apierrors.IsAlreadyExists(err) &&
+			!apierrors.IsNotFound(err) {
 
 			logger.Error(err, "unable to apply NetworkPolicy", "name", np.Name)
 			return ctrl.Result{}, err
