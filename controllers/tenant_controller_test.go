@@ -20,7 +20,7 @@ func TestTenantCreatesNamespace(t *testing.T) {
 	g := NewWithT(t)
 
 	// -------------------------------------------------------------------------
-	// Client EXPLICITE avec le bon Scheme
+	// Envtest setup
 	// -------------------------------------------------------------------------
 	k8sClient, err := client.New(cfg, client.Options{
 		Scheme: scheme,
@@ -48,7 +48,7 @@ func TestTenantCreatesNamespace(t *testing.T) {
 	}()
 
 	// -------------------------------------------------------------------------
-	// Tenant CR (GVK FORCÉ)
+	// Tenant CR (GVK FORECED)
 	// -------------------------------------------------------------------------
 	tenant := &platformv1alpha1.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
@@ -70,7 +70,7 @@ func TestTenantCreatesNamespace(t *testing.T) {
 		},
 	}
 
-	// 🔑 LIGNE CRITIQUE : forcer le GVK
+	// 🔑 FORCED GVK
 	tenant.SetGroupVersionKind(
 		platformv1alpha1.GroupVersion.WithKind("Tenant"),
 	)
@@ -78,7 +78,7 @@ func TestTenantCreatesNamespace(t *testing.T) {
 	g.Expect(k8sClient.Create(context.Background(), tenant)).To(Succeed())
 
 	// -------------------------------------------------------------------------
-	// Vérifier que le Namespace est créé
+	// 	ASSERT Namespace is created (eventually, with timeout)
 	// -------------------------------------------------------------------------
 	ns := &corev1.Namespace{}
 	g.Eventually(func() error {

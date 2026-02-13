@@ -110,6 +110,9 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: nsName,
+			Labels: map[string]string{
+				ManagedByLabelKey: ManagedByLabelValue,
+			},
 		},
 	}
 
