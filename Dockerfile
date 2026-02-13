@@ -1,7 +1,7 @@
 # =========================
 # 1️⃣ Build stage
 # =========================
-FROM golang:1.24.0-alpine AS builder
+FROM golang:1.26.0-alpine AS builder
 
 # Sécurité de base
 RUN apk add --no-cache ca-certificates git
