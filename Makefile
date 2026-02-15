@@ -101,8 +101,8 @@ PLATFORMS ?= linux/amd64,linux/arm64
 # Toolchain installation
 # ==============================================================================
 
-.PHONY: go
-go:
+.PHONY: install-go
+install-go:
 	@mkdir -p $(BIN_DIR)
 	@if [ -x "$(GO_VERSION_DIR)/bin/go" ]; then \
 		echo "✅ Go $(GO_VERSION) already installed"; \
@@ -117,7 +117,7 @@ go:
 	@$(GO_BIN) version
 
 .PHONY: controller-gen
-controller-gen: go
+controller-gen: install-go
 	@if [ ! -x "$(CONTROLLER_GEN)" ]; then \
 		GOBIN=$(BIN_DIR) $(GO) install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0 ;\
 	fi
@@ -128,7 +128,7 @@ deps:
 	cd src && $(GO) mod verify
 
 .PHONY: go-cmd
-go-cmd: go
+go-cmd: install-go
 	@if [ -z "$(ARGS)" ]; then \
 		echo "Usage: make go-cmd ARGS=\"<go arguments>\""; \
 		exit 1; \
@@ -157,14 +157,14 @@ manifests: controller-gen
 		output:crd:artifacts:config=../manifests/charts/namespace-operator/crds
 
 .PHONY: fmt
-fmt: go
+fmt: install-go
 	cd src && $(GO) fmt ./...
 
 .PHONY: lint
 lint: vet fmt ## Same behavior as before
 
 .PHONY: vet
-vet: go
+vet: install-go
 	cd src && $(GO) vet ./...
 
 .PHONY: test
