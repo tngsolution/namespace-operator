@@ -16,7 +16,7 @@ If you discover a security vulnerability, please **do not open a public issue**.
 Instead, report it privately by:
 
 - Opening a GitHub Security Advisory (recommended)
-- Or emailing: security@yourdomain.com (if applicable)
+- Or emailing: security@tngsolutions.fr (if applicable)
 
 Please include:
 
