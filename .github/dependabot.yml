@@ -1,9 +1,9 @@
 version: 2
 
 updates:
-  # Go modules (go.mod)
+  # Go modules
   - package-ecosystem: "gomod"
-    directory: "/"
+    directory: "/src"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -25,7 +25,7 @@ updates:
     commit-message:
       prefix: "deps(ci)"
 
-  # Helm dependencies (si tu ajoutes des charts en dependency dans Chart.yaml)
+  # Helm
   - package-ecosystem: "helm"
     directory: "/manifests/charts/namespace-operator"
     schedule:
@@ -37,9 +37,9 @@ updates:
     commit-message:
       prefix: "deps(helm)"
 
-  # Docker images (si tu as des images dans values.yaml ou ailleurs)  
+  # Docker (Dockerfile is inside src/)
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/src"
     schedule:
       interval: "weekly"
       day: "monday"
