@@ -11,7 +11,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	networkingv1 "k8s.io/api/networking/v1" // 🔥 IMPORTANT
+	networkingv1 "k8s.io/api/networking/v1" // Kubernetes NetworkPolicy API, required for NetworkPolicyReconciler and AddToScheme
 
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
