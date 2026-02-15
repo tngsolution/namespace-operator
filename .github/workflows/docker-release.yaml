@@ -51,7 +51,7 @@ jobs:
         run: make generate
 
       - name: Upload generated artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: generated
           path: |
