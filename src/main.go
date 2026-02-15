@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strconv"
 
 	platformv1alpha1 "github.com/tngs/namespace-operator/api/v1alpha1"
 	"github.com/tngs/namespace-operator/controllers"
@@ -31,7 +32,14 @@ func init() {
 }
 
 func main() {
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	devMode := false
+	if v, ok := os.LookupEnv("LOG_DEV_MODE"); ok {
+		parsed, err := strconv.ParseBool(v)
+		if err == nil {
+			devMode = parsed
+		}
+	}
+	ctrl.SetLogger(zap.New(zap.UseDevMode(devMode)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -47,6 +55,7 @@ func main() {
 	})
 
 	if err != nil {
+		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
@@ -75,14 +84,17 @@ func main() {
 	// Health probes
 	// ---------------------------------------------------------------------
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up health check", "check", "healthz")
 		os.Exit(1)
 	}
 
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up ready check", "check", "readyz")
 		os.Exit(1)
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 }
