@@ -17,6 +17,10 @@ jobs:
     name: Analyze (Go)
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: src
+
     strategy:
       fail-fast: false
       matrix:
@@ -36,6 +40,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
+
       - name: Install controller-gen
         run: go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0
 

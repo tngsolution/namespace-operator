@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 	// Resolve absolute CRD path (important!)
 	// ---------------------------------------------------------------------
 	crdPath, err := filepath.Abs(
-		filepath.Join("..", "manifests", "charts", "namespace-operator", "crds"),
+		filepath.Join("..", "..", "manifests", "charts", "namespace-operator", "crds"),
 	)
 	if err != nil {
 		panic(err)
