@@ -27,7 +27,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(networkingv1.AddToScheme(scheme))     // 🔥 REQUIRED
+	utilruntime.Must(networkingv1.AddToScheme(scheme))     // Register Kubernetes NetworkPolicy API types with the runtime scheme.
 	utilruntime.Must(platformv1alpha1.AddToScheme(scheme)) // Tenant & TenantProfile
 }
 
