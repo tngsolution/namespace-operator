@@ -19,14 +19,15 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-
+          cache: true
+          cache-dependency-path: src/go.sum
       - name: Prepare PATH
         run: |
-          mkdir -p .bin
+          mkdir -p ./.bin
           echo "$PWD/.bin" >> $GITHUB_PATH
 
       - name: Install tools
-        run: make go
+        run: make install-go
 
 
   generate:
@@ -40,7 +41,8 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-
+          cache: true
+          cache-dependency-path: src/go.sum
       - run: echo "$PWD/.bin" >> $GITHUB_PATH
 
       - name: Generate code
@@ -51,8 +53,8 @@ jobs:
         with:
           name: generated
           path: |
-            api/**/zz_generated.deepcopy.go
-            config/crd/bases/*.yaml
+            src/api/**/zz_generated.deepcopy.go
+            manifests/charts/namespace-operator/crds/*.yaml
 
 
   lint:
@@ -66,7 +68,8 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-
+          cache: true
+          cache-dependency-path: src/go.sum
       - run: echo "$PWD/.bin" >> $GITHUB_PATH
 
       - name: Download generated artifacts
@@ -88,7 +91,8 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-
+          cache: true
+          cache-dependency-path: src/go.sum
       - run: echo "$PWD/.bin" >> $GITHUB_PATH
 
       - name: Download generated artifacts
@@ -110,7 +114,8 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-
+          cache: true
+          cache-dependency-path: src/go.sum
       - run: echo "$PWD/.bin" >> $GITHUB_PATH
 
       - name: Download generated artifacts

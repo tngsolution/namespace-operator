@@ -21,14 +21,16 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-
+          cache: true
+          cache-dependency-path: src/go.sum
       - name: Prepare PATH
         run: |
-          mkdir -p .bin
+          mkdir -p ./.bin
           echo "$PWD/.bin" >> $GITHUB_PATH
 
       - name: Install tools
-        run: make go
+        run: make install-go
+
 
   generate:
     name: Generate
@@ -41,7 +43,8 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-
+          cache: true
+          cache-dependency-path: src/go.sum
       - run: echo "$PWD/.bin" >> $GITHUB_PATH
 
       - name: Generate code
@@ -52,8 +55,9 @@ jobs:
         with:
           name: generated
           path: |
-            api/**/zz_generated.deepcopy.go
-            config/crd/bases/*.yaml
+            src/api/**/zz_generated.deepcopy.go
+            manifests/charts/namespace-operator/crds/*.yaml
+
 
   docker:
     name: Build & Push Docker Image
@@ -95,8 +99,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile
+          context: ./src
+          file: ./src/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |

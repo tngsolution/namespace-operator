@@ -101,8 +101,8 @@ PLATFORMS ?= linux/amd64,linux/arm64
 # Toolchain installation
 # ==============================================================================
 
-.PHONY: go
-go:
+.PHONY: install-go
+install-go:
 	@mkdir -p $(BIN_DIR)
 	@if [ -x "$(GO_VERSION_DIR)/bin/go" ]; then \
 		echo "✅ Go $(GO_VERSION) already installed"; \
@@ -117,18 +117,18 @@ go:
 	@$(GO_BIN) version
 
 .PHONY: controller-gen
-controller-gen: go
+controller-gen: install-go
 	@if [ ! -x "$(CONTROLLER_GEN)" ]; then \
 		GOBIN=$(BIN_DIR) $(GO) install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0 ;\
 	fi
 
 .PHONY: deps
 deps:
-	$(GO) mod tidy
-	$(GO) mod verify
+	cd src && $(GO) mod tidy
+	cd src && $(GO) mod verify
 
 .PHONY: go-cmd
-go-cmd: go
+go-cmd: install-go
 	@if [ -z "$(ARGS)" ]; then \
 		echo "Usage: make go-cmd ARGS=\"<go arguments>\""; \
 		exit 1; \
@@ -149,41 +149,40 @@ envtest:
 
 .PHONY: generate
 generate: controller-gen
-	$(CONTROLLER_GEN) object paths="./..."
+	cd src && $(CONTROLLER_GEN) object paths="./..."
 
 .PHONY: manifests
 manifests: controller-gen
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd paths="./..." \
-		output:crd:artifacts:config=manifests/charts/namespace-operator/crds
+	cd src && $(CONTROLLER_GEN) rbac:roleName=manager-role crd paths="./..." \
+		output:crd:artifacts:config=../manifests/charts/namespace-operator/crds
 
 .PHONY: fmt
-fmt: go
-	$(GO) fmt ./...
+fmt: install-go
+	cd src && $(GO) fmt ./...
 
 .PHONY: lint
 lint: vet fmt ## Same behavior as before
 
 .PHONY: vet
-vet: go
-	$(GO) vet ./...
+vet: install-go
+	cd src && $(GO) vet ./...
 
 .PHONY: test
 test: envtest generate manifests fmt vet
 	$(ENVTEST) use latest --bin-dir $(BIN_DIR) >/dev/null
-	KUBEBUILDER_ASSETS=$$($(ENVTEST) use $(K8S_VERSION) --bin-dir $(BIN_DIR) -p path) \
-	$(GO) test ./... -coverprofile cover.out
-
+	@ASSETS=$$($(ENVTEST) use $(K8S_VERSION) --bin-dir $(BIN_DIR) -p path); \
+	cd src && KUBEBUILDER_ASSETS=$$ASSETS $(GO) test ./... -coverprofile cover.out
 # ==============================================================================
 # Build
 # ==============================================================================
 
 .PHONY: build
 build: fmt vet
-	$(GO) build -o bin/manager main.go
+	cd src && $(GO) build -o bin/manager main.go
 
 .PHONY: run
 run:
-	$(GO) run ./main.go
+	cd src && $(GO) run ./main.go
 
 # ==============================================================================
 # Container image (Linux = BuildKit / macOS = Docker)
@@ -203,12 +202,12 @@ ifeq ($(OS),linux)
 	fi
 	sudo $(BUILDCTL) build \
 	  --frontend dockerfile.v0 \
-	  --local context=. \
+	  --local context=src \
 	  --local dockerfile=. \
 	  --output type=image,name=$(IMG),push=false
 else
 	@echo "🍎 Using Docker"
-	$(DOCKER) build -t $(IMG) .
+	$(DOCKER) build -t $(IMG) src
 endif
 
 .PHONY: image-push
@@ -217,7 +216,7 @@ ifeq ($(OS),linux)
 	@echo "🐧 Using BuildKit push"
 	sudo $(BUILDCTL) build \
 	  --frontend dockerfile.v0 \
-	  --local context=. \
+	  --local context=src \
 	  --local dockerfile=. \
 	  --output type=image,name=$(IMG),push=true
 else
