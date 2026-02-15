@@ -71,7 +71,7 @@ func main() {
 	}
 
 	// ---------------------------------------------------------------------
-	// NetworkPolicy controller  🔥🔥🔥
+	// NetworkPolicy controller: reconciles Kubernetes NetworkPolicy resources for tenants.
 	// ---------------------------------------------------------------------
 	if err = (&controllers.NetworkPolicyReconciler{
 		Client: mgr.GetClient(),
