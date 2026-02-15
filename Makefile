@@ -133,7 +133,7 @@ go-cmd: install-go
 		echo "Usage: make go-cmd ARGS=\"<go arguments>\""; \
 		exit 1; \
 	fi
-	$(GO) $(ARGS)
+	cd src && $(GO) $(ARGS)
 
 .PHONY: envtest
 envtest:
