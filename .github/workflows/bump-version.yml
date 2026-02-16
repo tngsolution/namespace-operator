@@ -26,14 +26,16 @@ jobs:
 
     steps:
       # ------------------------------------------------------------
-      # Checkout full history (needed for tags)
+      # Checkout MAIN explicitly (important)
       # ------------------------------------------------------------
-      - uses: actions/checkout@v4
+      - name: Checkout main
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
 
       # ------------------------------------------------------------
-      # Install tools
+      # Install yq
       # ------------------------------------------------------------
       - name: Install tools
         run: sudo snap install yq
@@ -44,7 +46,7 @@ jobs:
       - name: Ensure repo clean
         run: |
           if [ -n "$(git status --porcelain)" ]; then
-            echo "Repo is dirty"
+            echo "Repository is dirty"
             exit 1
           fi
 
@@ -97,22 +99,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       # ------------------------------------------------------------
-      # Create release branch FROM origin/main
-      # ------------------------------------------------------------
-      - name: Create release branch
-        if: inputs.dry_run != 'true'
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          BRANCH="release/v$VERSION"
-
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-
-          git fetch origin main
-          git checkout -b $BRANCH origin/main
-
-      # ------------------------------------------------------------
-      # Apply version changes (on release branch)
+      # Apply version changes (no manual commit)
       # ------------------------------------------------------------
       - name: Apply version
         if: inputs.dry_run != 'true'
@@ -126,15 +113,8 @@ jobs:
           sed -i.bak "s/^VERSION := .*/VERSION := ${VERSION}/" Makefile
           rm -f Makefile.bak
 
-          git add manifests/charts/namespace-operator/Chart.yaml
-          git add manifests/charts/namespace-operator/values.yaml
-          git add Makefile
-
-          git commit -m "chore(release): v$VERSION"
-          git push origin release/v$VERSION
-
       # ------------------------------------------------------------
-      # Create Pull Request toward stable (default)
+      # Create PR (this creates branch + commit automatically)
       # ------------------------------------------------------------
       - name: Create Pull Request
         if: inputs.dry_run != 'true'
@@ -143,6 +123,7 @@ jobs:
           branch: release/v${{ steps.version.outputs.version }}
           base: ${{ inputs.base_branch }}
           title: "chore(release): v${{ steps.version.outputs.version }}"
+          commit-message: "chore(release): v${{ steps.version.outputs.version }}"
           body: |
             Automated version bump to v${{ steps.version.outputs.version }}
 
