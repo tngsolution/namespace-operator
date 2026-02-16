@@ -11,52 +11,32 @@ on:
         description: "Dry run"
         required: false
         default: "false"
-      base_branch:
-        description: "Target branch for release PR"
-        required: false
-        default: "stable"
-
-permissions:
-  contents: write
-  pull-requests: write
 
 jobs:
   bump:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
-      # ------------------------------------------------------------
-      # Checkout MAIN explicitly (important)
-      # ------------------------------------------------------------
-      - name: Checkout main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main
 
-      # ------------------------------------------------------------
-      # Install yq
-      # ------------------------------------------------------------
       - name: Install tools
         run: sudo snap install yq
 
-      # ------------------------------------------------------------
-      # Ensure repo clean
-      # ------------------------------------------------------------
       - name: Ensure repo clean
         run: |
           if [ -n "$(git status --porcelain)" ]; then
-            echo "Repository is dirty"
+            echo "Repo is dirty"
             exit 1
           fi
 
-      # ------------------------------------------------------------
-      # Detect bump level from commit messages
-      # ------------------------------------------------------------
-      - name: Detect bump level
+      - name: Detect bump level from commits
         id: level
         run: |
-          LAST_TAG=$(git tag --sort=-v:refname | head -n1 || echo "v0.0.0")
+          LAST_TAG=$(git tag --sort=-v:refname | head -n1)
           RANGE="${LAST_TAG}..HEAD"
           LEVEL="patch"
 
@@ -68,15 +48,10 @@ jobs:
 
           echo "level=$LEVEL" >> $GITHUB_OUTPUT
 
-      # ------------------------------------------------------------
-      # Compute next version
-      # ------------------------------------------------------------
       - name: Compute version
         id: version
         run: |
-          LAST_TAG=$(git tag --sort=-v:refname | head -n1 || echo "v0.0.0")
-          LAST_TAG=${LAST_TAG#v}
-
+          LAST_TAG=$(git tag --sort=-v:refname | head -n1 | sed 's/^v//')
           IFS='.' read MAJOR MINOR PATCH <<< "$LAST_TAG"
 
           case "${{ steps.level.outputs.level }}" in
@@ -98,35 +73,20 @@ jobs:
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      # ------------------------------------------------------------
-      # Apply version changes (no manual commit)
-      # ------------------------------------------------------------
       - name: Apply version
-        if: inputs.dry_run != 'true'
         run: |
           VERSION=${{ steps.version.outputs.version }}
 
           yq -i '.version = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
           yq -i '.appVersion = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
           yq -i '.image.tag = "'$VERSION'"' manifests/charts/namespace-operator/values.yaml
-
-          sed -i.bak "s/^VERSION := .*/VERSION := ${VERSION}/" Makefile
-          rm -f Makefile.bak
-
-      # ------------------------------------------------------------
-      # Create PR (this creates branch + commit automatically)
-      # ------------------------------------------------------------
-      - name: Create Pull Request
+          sed -i.bak "s/^VERSION := .*/VERSION := ${VERSION}/" Makefile && rm Makefile.bak
+      - name: Commit
         if: inputs.dry_run != 'true'
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: release/v${{ steps.version.outputs.version }}
-          base: ${{ inputs.base_branch }}
-          title: "chore(release): v${{ steps.version.outputs.version }}"
-          commit-message: "chore(release): v${{ steps.version.outputs.version }}"
-          body: |
-            Automated version bump to v${{ steps.version.outputs.version }}
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
 
-            - Source branch: main
-            - Target branch: ${{ inputs.base_branch }}
-            - Preview: ${{ inputs.preview }}
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git commit -am "chore(release): v$VERSION"
+          git push
