@@ -15,6 +15,7 @@ on:
         description: "Target branch for release PR"
         required: false
         default: "stable"
+
 permissions:
   contents: write
   pull-requests: write
@@ -24,13 +25,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ------------------------------------------------------------
+      # Checkout full history (needed for tags)
+      # ------------------------------------------------------------
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # ------------------------------------------------------------
+      # Install tools
+      # ------------------------------------------------------------
       - name: Install tools
         run: sudo snap install yq
 
+      # ------------------------------------------------------------
+      # Ensure repo clean
+      # ------------------------------------------------------------
       - name: Ensure repo clean
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -38,7 +48,10 @@ jobs:
             exit 1
           fi
 
-      - name: Detect bump level from commits
+      # ------------------------------------------------------------
+      # Detect bump level from commit messages
+      # ------------------------------------------------------------
+      - name: Detect bump level
         id: level
         run: |
           LAST_TAG=$(git tag --sort=-v:refname | head -n1 || echo "v0.0.0")
@@ -53,6 +66,9 @@ jobs:
 
           echo "level=$LEVEL" >> $GITHUB_OUTPUT
 
+      # ------------------------------------------------------------
+      # Compute next version
+      # ------------------------------------------------------------
       - name: Compute version
         id: version
         run: |
@@ -80,16 +96,9 @@ jobs:
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Apply version
-        if: inputs.dry_run != 'true'
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-
-          yq -i '.version = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
-          yq -i '.appVersion = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
-          yq -i '.image.tag = "'$VERSION'"' manifests/charts/namespace-operator/values.yaml
-          sed -i.bak "s/^VERSION := .*/VERSION := ${VERSION}/" Makefile && rm Makefile.bak
-
+      # ------------------------------------------------------------
+      # Create release branch FROM origin/main
+      # ------------------------------------------------------------
       - name: Create release branch
         if: inputs.dry_run != 'true'
         run: |
@@ -99,10 +108,34 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-          git checkout -b $BRANCH
-          git commit -am "chore(release): v$VERSION"
-          git push origin $BRANCH
+          git fetch origin main
+          git checkout -b $BRANCH origin/main
 
+      # ------------------------------------------------------------
+      # Apply version changes (on release branch)
+      # ------------------------------------------------------------
+      - name: Apply version
+        if: inputs.dry_run != 'true'
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          yq -i '.version = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
+          yq -i '.appVersion = "'$VERSION'"' manifests/charts/namespace-operator/Chart.yaml
+          yq -i '.image.tag = "'$VERSION'"' manifests/charts/namespace-operator/values.yaml
+
+          sed -i.bak "s/^VERSION := .*/VERSION := ${VERSION}/" Makefile
+          rm -f Makefile.bak
+
+          git add manifests/charts/namespace-operator/Chart.yaml
+          git add manifests/charts/namespace-operator/values.yaml
+          git add Makefile
+
+          git commit -m "chore(release): v$VERSION"
+          git push origin release/v$VERSION
+
+      # ------------------------------------------------------------
+      # Create Pull Request toward stable (default)
+      # ------------------------------------------------------------
       - name: Create Pull Request
         if: inputs.dry_run != 'true'
         uses: peter-evans/create-pull-request@v6
@@ -112,3 +145,7 @@ jobs:
           title: "chore(release): v${{ steps.version.outputs.version }}"
           body: |
             Automated version bump to v${{ steps.version.outputs.version }}
+
+            - Source branch: main
+            - Target branch: ${{ inputs.base_branch }}
+            - Preview: ${{ inputs.preview }}
