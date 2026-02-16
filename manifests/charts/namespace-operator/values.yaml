@@ -59,7 +59,7 @@ service:
   # -- Service type (ClusterIP, NodePort, LoadBalancer)
   type: ClusterIP
   # -- Service port
-  port: 8081
+  port: 8080
 # -- Container ports exposed by the controller
 ports:
   - name: metrics

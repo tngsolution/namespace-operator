@@ -41,6 +41,9 @@ func main() {
 	}
 	ctrl.SetLogger(zap.New(zap.UseDevMode(devMode)))
 
+	leaderElection := os.Getenv("ENABLE_LEADER_ELECTION") == "true"
+	leaderElectionNamespace := os.Getenv("LEADER_ELECTION_NAMESPACE")
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 
@@ -50,8 +53,9 @@ func main() {
 
 		HealthProbeBindAddress: ":8081",
 
-		LeaderElection:   true,
-		LeaderElectionID: "namespace-operator.platform.example.com",
+		LeaderElection:          leaderElection,
+		LeaderElectionID:        "namespace-operator.platform.example.com",
+		LeaderElectionNamespace: leaderElectionNamespace,
 	})
 
 	if err != nil {
