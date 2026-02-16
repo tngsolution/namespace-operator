@@ -50,3 +50,4 @@ coverage.txt
 **/bin
 **/namespace-operator-*.tgz
 **/config/rbac
+**/rendered.yaml

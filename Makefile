@@ -226,6 +226,19 @@ endif
 # ==============================================================================
 # Helm
 # ==============================================================================
+.PHONY: helm-lint
+helm-lint:
+	helm lint $(HELM_CHART)
+
+.PHONY: helm-render
+helm-render:
+	helm template $(HELM_RELEASE) $(HELM_CHART) \
+	  --namespace $(HELM_NAMESPACE) > rendered.yaml
+
+.PHONY: helm-template
+helm-template:
+	helm template $(HELM_RELEASE) $(HELM_CHART) \
+	  --namespace $(HELM_NAMESPACE)
 
 .PHONY: helm-install
 helm-install:
